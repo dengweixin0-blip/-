@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">视频识别记录</h2>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">历史记录</h5>
+<!--        <div>-->
+<!--            <input type="text" class="form-control form-control-sm" placeholder="搜索..." style="width: 200px; display: inline-block;">-->
+<!--            <button class="btn btn-sm btn-outline-secondary ms-2">筛选</button>-->
+<!--        </div>-->
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>上传时间</th>
+                        <th>帧数</th>
+                        <th>模型</th>
+                        <th>平均置信度</th>
+                        <th>检测结果</th>
+                        <th></th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ record[0] }}</td>
+                        <td>{{ record[2] }}</td>
+                        <td>{{ record[3] }}</td>
+                        <td>{{ record[7] }}</td>
+                        <td>{{ (record[5])*100 }}%</td>
+                        <td>{{ record[4] }}</td>
+                        <td>
+                            <td>
+                                <a href="{{ url_for('video_record_detail', record_id=record[0]) }}" class="btn btn-sm btn-outline-primary">查看</a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord({{ record[0] }})">删除</button>
+                            </td>
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <nav aria-label="分页导航">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ page - 1 }}">上一页</a>
+                </li>
+
+                {% for p in range(1, total_pages + 1) %}
+                    <li class="page-item {% if page == p %}active{% endif %}">
+                        <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ page + 1 }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- 查看详情弹窗 -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailModalLabel">识别详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>视频文件名:</strong> <span id="modal-video-name"></span></p>
+        <p><strong>检测标签:</strong> <span id="modal-result"></span></p>
+        <p><strong>平均置信度:</strong> <span id="modal-confidence"></span>%</p>
+        <p><strong>使用模型:</strong> <span id="modal-model"></span></p>
+        <p><strong>上传时间:</strong> <span id="modal-upload-time"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 删除记录
+function deleteRecord(recordId) {
+    if (confirm('确定删除此记录吗？')) {
+        fetch(`/delete_video_record/${recordId}`, {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('记录已删除');
+                location.reload();
+            } else {
+                alert('删除失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除失败');
+        });
+    }
+}
+
+// 查看详情
+function showDetail(recordId) {
+    fetch('/video_record/detail/' + recordId)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('modal-video-name').innerText = data.video_path;
+            document.getElementById('modal-result').innerText = data.result || '无';
+            document.getElementById('modal-confidence').innerText = data.confidence ? (data.confidence * 100).toFixed(2) : '无';
+            document.getElementById('modal-model').innerText = data.model || '无';
+            document.getElementById('modal-upload-time').innerText = data.upload_time || '无';
+
+            var myModal = new bootstrap.Modal(document.getElementById('detailModal'));
+            myModal.show();
+        } else {
+            alert('查询失败');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('请求失败');
+    });
+}
+</script>
+
+{% endblock %}

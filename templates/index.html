@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}首页 - 检测统计{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">检测统计信息</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h5>图像检测结果分布</h5>
+            <div id="imageChart" style="width:100%; height:400px;"></div>
+        </div>
+        <div class="col-md-6">
+            <h5>视频检测结果分布</h5>
+            <div id="videoChart" style="width:100%; height:400px;"></div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h5>各模型使用次数</h5>
+            <div id="modelChart" style="width:100%; height:400px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 引入 ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+<script>
+// 初始化 ECharts 实例
+const imageChart = echarts.init(document.getElementById('imageChart'));
+const videoChart = echarts.init(document.getElementById('videoChart'));
+const modelChart = echarts.init(document.getElementById('modelChart'));
+
+// 统一的画图函数
+function drawCharts(data) {
+    // 图像检测饼图
+    imageChart.setOption({
+        title: { text: '图像检测', left: 'center' },
+        tooltip: { trigger: 'item' },
+        legend: { bottom: 10, left: 'center' },
+        series: [{
+            name: '检测结果',
+            type: 'pie',
+            radius: '50%',
+            data: data.image_results.map(item => ({ value: item.count, name: item.result })),
+            emphasis: {
+                itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+            }
+        }]
+    });
+
+    // 视频检测饼图
+    videoChart.setOption({
+        title: { text: '视频检测', left: 'center' },
+        tooltip: { trigger: 'item' },
+        legend: { bottom: 10, left: 'center' },
+        series: [{
+            name: '检测结果',
+            type: 'pie',
+            radius: '50%',
+            data: data.video_results.map(item => ({ value: item.count, name: item.result })),
+            emphasis: {
+                itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+            }
+        }]
+    });
+
+    // 模型使用柱状图
+    modelChart.setOption({
+        title: { text: '模型使用统计', left: 'center' },
+        tooltip: { trigger: 'axis' },
+        xAxis: {
+            type: 'category',
+            data: data.model_usage.map(item => item.model)
+        },
+        yAxis: { type: 'value' },
+        series: [{
+            data: data.model_usage.map(item => item.count),
+            type: 'bar'
+        }]
+    });
+}
+
+// 页面加载时，先主动拉取一次初始数据
+fetch('/stats')
+    .then(response => response.json())
+    .then(data => {
+        drawCharts(data);
+    });
+
+// 建立 SSE 连接，实时监听后台推送
+const eventSource = new EventSource('/statistics/stream');
+
+eventSource.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    drawCharts(data);
+};
+
+eventSource.onerror = function(error) {
+    console.error("SSE连接出错", error);
+    eventSource.close();
+};
+</script>
+
+{% endblock %}

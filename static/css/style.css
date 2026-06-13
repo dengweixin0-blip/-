@@ -1,0 +1,103 @@
+/* ========== 通用基础样式 ========== */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    background-color: #f5f5f5;
+}
+
+/* ========== 左侧导航栏 ========== */
+.sidebar {
+    background-color: rgba(213, 186, 224, 0.99); /* 浅紫色背景 */
+    color: black;
+    width: 240px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 20px 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+.system-name h2 {
+    background-color: rgba(213, 186, 224, 0.99); /* 浅紫色背景 */
+    color: black;
+    font-size: 20px;
+    text-align: center;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    word-break: break-word;
+}
+
+/* ========== 导航链接 ========== */
+.nav {
+    width: 100%;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    color: black;
+    padding: 12px 20px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.2s ease-in-out;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.nav-link i {
+    min-width: 20px;
+    text-align: center;
+}
+
+.nav-link:hover {
+    background-color: white;
+    color: rgba(98, 148, 250, 0.99); /* 蓝色字体 */
+}
+
+/* ========== 主内容区域 ========== */
+.main-content {
+    margin-left: 240px;
+    padding: 30px;
+    width: calc(100% - 240px);
+    transition: margin-left 0.3s ease;
+}
+
+#contentArea {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* ========== 响应式设计 ========== */
+@media (max-width: 768px) {
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+    }
+
+    .nav-link {
+        justify-content: center;
+    }
+
+    .nav-link i {
+        display: none; /* 可选：小屏幕隐藏图标 */
+    }
+}

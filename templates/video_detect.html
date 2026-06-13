@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>视频检测</h2>
+
+    <!-- 上传表单 -->
+    <form id="upload-form" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="video" class="form-label">选择视频文件</label>
+            <input type="file" class="form-control" id="video" name="video" accept="video/*" required>
+        </div>
+        <div class="mb-3">
+            <label for="model_path" class="form-label">选择模型</label>
+            <select class="form-select" id="model_path" name="model_path" required>
+                <!-- 动态加载模型列表 -->
+                {% for model in models %}
+                    <option value="{{ model }}">{{ model }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="threshold" class="form-label">置信度阈值</label>
+            <input type="number" class="form-control" id="threshold" name="threshold" step="0.01" min="0" max="1" value="0.5" required>
+        </div>
+        <button type="submit" class="btn btn-primary">开始检测</button>
+    </form>
+
+    <hr>
+
+    <!-- 检测结果 -->
+    <div id="result-section" style="display: none;">
+        <h3>检测结果</h3>
+        <p><strong>检测帧数:</strong> <span id="tumor-frame-count"></span> / <span id="total-frames"></span></p>
+        <p><strong>平均置信度:</strong> <span id="max-confidence"></span>%</p>
+        <p><strong>平均肿瘤尺寸:</strong> 宽 <span id="avg-width"></span> px，高 <span id="avg-height"></span> px</p>
+        <p><strong>详细标签统计:</strong></p>
+        <div id="detection-summary" class="alert alert-info"></div>
+
+        <!-- 展示检测出的帧 -->
+        <div class="row" id="frames-container"></div>
+    </div>
+</div>
+
+<!-- 引入Chart.js做后续图表 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.getElementById('upload-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch('/video_detect/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('检测失败: ' + data.error);
+            return;
+        }
+
+        // 显示检测信息
+        document.getElementById('tumor-frame-count').innerText = data.tumor_frame_count;
+        document.getElementById('total-frames').innerText = data.total_frames;
+        document.getElementById('max-confidence').innerText = data.max_confidence;
+        document.getElementById('avg-width').innerText = data.avg_size.width;
+        document.getElementById('avg-height').innerText = data.avg_size.height;
+
+        // 显示标签统计
+        document.getElementById('detection-summary').innerText = data.detection_summary || "无标签检测到";
+
+        // 展示检测帧
+        const framesContainer = document.getElementById('frames-container');
+        framesContainer.innerHTML = ''; // 清空旧的
+        data.frames.forEach(frame => {
+            const img = document.createElement('img');
+            img.src = frame;
+            img.className = 'col-md-3 mb-3';
+            img.style.maxWidth = '100%';
+            img.style.border = '1px solid #ccc';
+            framesContainer.appendChild(img);
+        });
+
+        document.getElementById('result-section').style.display = 'block';
+    })
+    .catch(error => {
+        console.error('上传出错:', error);
+        alert('上传失败');
+    });
+});
+</script>
+{% endblock %}

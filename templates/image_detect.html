@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4">图像检测</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="detectForm" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="modelSelect" class="form-label">选择模型：</label>
+                <select class="form-select" name="model" id="modelSelect" required>
+                    <option value="">请选择模型</option>
+                    {% for model in models %}
+                    <option value="{{ model }}">{{ model }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">上传图像（可多选）：</label>
+                <input class="form-control" type="file" id="imageUpload" name="images" multiple accept="image/*" required>
+            </div>
+            <button type="submit" class="btn btn-primary">开始检测</button>
+        </form>
+    </div>
+</div>
+
+<div id="resultsContainer" class="row"></div>
+
+<div id="summaryContainer" class="mt-4" style="display:none;">
+    <h5>识别总结</h5>
+    <ul id="summaryList" class="list-group"></ul>
+</div>
+
+<script>
+document.getElementById('detectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const form = new FormData();
+    const files = document.getElementById('imageUpload').files;
+    const model = document.getElementById('modelSelect').value;
+
+    if (!model || files.length === 0) {
+        alert('请选择模型并上传图片！');
+        return;
+    }
+
+    for (let i = 0; i < files.length; i++) {
+        form.append('images', files[i]);
+    }
+    form.append('model', model);
+
+    fetch('/detect', {
+        method: 'POST',
+        body: form
+    })
+    .then(res => res.json())
+    .then(data => {
+        const container = document.getElementById('resultsContainer');
+        container.innerHTML = '';
+        data.results.forEach(res => {
+            const html = `
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <p><strong>原图：</strong></p>
+                        <img src="${res.original}" class="img-fluid mb-2"/>
+                        <p><strong>检测结果：</strong></p>
+                        <img src="${res.result}" class="img-fluid"/>
+                        <p class="mt-2">识别标签：${res.labels.join(', ') || '无'}</p>
+                    </div>
+                </div>
+            </div>`;
+            container.innerHTML += html;
+        });
+
+        const summary = data.summary;
+        const summaryList = document.getElementById('summaryList');
+        summaryList.innerHTML = `
+            <li class="list-group-item">总图像数: ${summary.total_images}</li>
+            <li class="list-group-item">检测到肿瘤图像数: ${summary.detected_images}</li>`;
+        for (let label in summary.labels) {
+            summaryList.innerHTML += `<li class="list-group-item">${label}: ${summary.labels[label]} 张</li>`;
+        }
+        document.getElementById('summaryContainer').style.display = 'block';
+    })
+    .catch(err => {
+        console.error(err);
+        alert('检测失败，请检查服务器是否正常。');
+    });
+});
+</script>
+{% endblock %}

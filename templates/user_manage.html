@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">用户管理</h2>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">用户列表</h5>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="bi bi-plus"></i> 添加用户
+        </button>
+    </div>
+            <div class="card-body">
+                <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>角色</th>
+                        <th>邮箱</th>
+                        <th>注册时间</th>
+                        <th>状态</th>
+<!--                        <th>操作</th>-->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user[0] }}</td>   {# id #}
+                        <td>{{ user[1] }}</td>   {# username #}
+                        <td>
+                            {% if user[2] == 'admin' %}
+                                <span class="badge bg-primary">管理员</span>
+                            {% elif user[2] == 'doctor' %}
+                                <span class="badge bg-info">医生</span>
+                            {% else %}
+                                <span class="badge bg-secondary">普通用户</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user[3] }}</td>  {# email #}
+                        <td>{{ user[4].strftime('%Y-%m-%d') }}</td> {# created_at #}
+                        <td>
+                            {% if user[5] == 'active' %}
+                                <span class="badge bg-success">活跃</span>
+                            {% else %}
+                                <span class="badge bg-danger">禁用</span>
+                            {% endif %}
+                        </td>
+<!--                        <td>-->
+<!--                            <button class="btn btn-sm btn-outline-primary" onclick="editUser({{ user[0] }})">编辑</button>-->
+<!--                            {% if user[5] == 'active' %}-->
+<!--                                <button class="btn btn-sm btn-outline-danger" onclick="disableUser({{ user[0] }})">禁用</button>-->
+<!--                            {% else %}-->
+<!--                                <button class="btn btn-sm btn-outline-success" onclick="enableUser({{ user[0] }})">启用</button>-->
+<!--                            {% endif %}-->
+<!--                        </td>-->
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+        <nav aria-label="分页导航">
+            <ul class="pagination justify-content-center">
+                <!-- 上一页 -->
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ page - 1 }}" tabindex="-1">上一页</a>
+                </li>
+
+                <!-- 中间页码 -->
+                {% for p in range(1, total_pages + 1) %}
+                    <li class="page-item {% if page == p %}active{% endif %}">
+                        <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+
+                <!-- 下一页 -->
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{ page + 1 }}">下一页</a>
+                </li>
+            </ul>
+        </nav>
+
+    </div>
+</div>
+
+<!-- 添加用户模态框 -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">添加新用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">角色</label>
+                        <select class="form-select" id="role">
+                            <option value="admin">管理员</option>
+                            <option value="doctor">医生</option>
+                            <option value="user" selected>普通用户</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addUser()">添加用户</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addUser() {
+    var username = document.getElementById('username').value;
+    var email = document.getElementById('email').value;
+    var password = document.getElementById('password').value;
+    var role = document.getElementById('role').value;
+
+    fetch('/add_user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `username=${username}&email=${email}&password=${password}&role=${role}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('添加成功！');
+            location.reload(); // 刷新页面
+        } else {
+            alert('添加失败：' + data.message);
+        }
+    });
+}
+</script>
+
+{% endblock %}

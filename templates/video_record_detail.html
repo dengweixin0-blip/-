@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>视频检测详情</h2>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>视频文件：</strong> {{ record[1] }}</p>
+            <p><strong>上传时间：</strong> {{ record[2] }}</p>
+            <p><strong>检测帧数：</strong> {{ record[3] }}</p>
+            <p><strong>检测标签：</strong> {{ record[7] if record[7] else '未知' }}</p>
+            <p><strong>使用模型：</strong> {{ record[6] }}</p>
+            <p><strong>平均置信度：</strong> {{ (record[5] * 100) | round(2) }}%</p>
+
+            <a href="{{ url_for('video_record') }}" class="btn btn-primary mt-3">返回</a>
+        </div>
+    </div>
+
+    <h4>检测视频帧</h4>
+    <div id="frames-container" class="row">
+        <!-- 这里不直接写图片，改用JS插入 -->
+    </div>
+</div>
+
+<script>
+    const frames = {{ frames | tojson }};
+
+    const framesContainer = document.getElementById('frames-container');
+    framesContainer.innerHTML = '';
+
+    frames.forEach(frame => {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col-md-3 mb-3';
+
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card';
+
+        const img = document.createElement('img');
+        img.src = frame.replace(/\\/g, '/'); // 防止路径反斜杠问题
+        img.alt = '检测帧';
+        img.style.width = '100%';
+
+        cardDiv.appendChild(img);
+        colDiv.appendChild(cardDiv);
+        framesContainer.appendChild(colDiv);
+    });
+</script>
+
+{% endblock %}
